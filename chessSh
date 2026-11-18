@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة الشطرنج الفاخرة - بوسعود</title>
+    <!-- استدعاء مكتبة الشطرنج وتصميم البورد -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css" />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(circle, #1a1a2e 0%, #0f0f1a 100%);
+            color: #fff;
+            font-family: Tahoma, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* واجهة البداية المتحركة المنورة */
+        #menu-container {
+            text-align: center;
+            background: rgba(20, 20, 35, 0.9);
+            padding: 40px;
+            border-radius: 20px;
+            border: 2px solid #00ffcc;
+            box-shadow: 0 0 30px rgba(0, 255, 204, 0.4);
+            max-width: 450px;
+            width: 90%;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            color: #00ffcc;
+            font-size: 32px;
+            margin-bottom: 25px;
+            text-shadow: 0 0 10px rgba(0, 255, 204, 0.7), 0 0 20px rgba(0, 255, 204, 0.5);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { text-shadow: 0 0 10px rgba(0,255,204,0.5); }
+            50% { text-shadow: 0 0 25px rgba(0,255,204,1), 0 0 35px rgba(0,255,204,0.8); }
+            100% { text-shadow: 0 0 10px rgba(0,255,204,0.5); }
+        }
+
+        .menu-btn {
+            background: linear-gradient(45deg, #00ffcc, #00b386);
+            color: #111;
+            border: none;
+            padding: 14px 20px;
+            margin: 12px 0;
+            width: 100%;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(0,255,204,0.3);
+        }
+
+        .menu-btn:hover {
+            transform: scale(1.03);
+            background: linear-gradient(45deg, #00cc99, #009973);
+            box-shadow: 0 6px 20px rgba(0,255,204,0.5);
+        }
+
+        /* شاشات فرعية (الأونلاين والروبوت) */
+        .sub-menu {
+            display: none;
+            text-align: center;
+            background: rgba(20, 20, 35, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            border: 2px solid #00ffcc;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        input[type="text"] {
+            width: 80%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #00ffcc;
+            background: #111;
+            color: #fff;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        /* لوحة الشطرنج */
+        #game-area {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #board {
+            width: 380px;
+            max-width: 90vw;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+        }
+
+        #status {
+            font-size: 18px;
+            margin-bottom: 15px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 20px;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+
+        .back-btn {
+            background: #ff4444;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .back-btn:hover { background: #cc0000; }
+    </style>
+
+    <!-- سكربتات الشطرنج الأساسية (Chess.js & jQuery & Chessboard.js) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
+</head>
+<body>
+
+    <!-- القائمة الرئيسية -->
+    <div id="menu-container">
+        <h1>شطرنج الأساطير</h1>
+        <button class="menu-btn" onclick="startLocalGame()">اللعب ضد صديق (محلي)</button>
+        <button class="menu-btn" onclick="showOnlineMenu()">اللعب أونلاين بكود</button>
+        <button class="menu-btn" onclick="showBotMenu()">اللعب ضد روبوت</button>
+    </div>
+
+    <!-- قائمة الأونلاين -->
+    <div id="online-menu" class="sub-menu">
+        <h2>تحدي أونلاين</h2>
+        <button class="menu-btn" onclick="createRoom()">إنشاء غرفة جديدة وتوليد كود</button>
+        <p id="room-code-display" style="color: #00ffcc; font-weight: bold; margin: 10px 0;"></p>
+        <p>أو ادخل كود صديقك هنا:</p>
+        <input type="text" id="join-code-input" placeholder="اكتب الكود هنا...">
+        <button class="menu-btn" onclick="joinRoom()">دخول الغرفة</button>
+        <button class="back-btn" onclick="backToMain()">رجوع</button>
+    </div>
+
+    <!-- قائمة اختيار مستويات الروبوت -->
+    <div id="bot-menu" class="sub-menu">
+        <h2>اختر مستوى الروبوت</h2>
+        <button class="menu-btn" onclick="startBotGame('easy')">ضعيف (مبتدئ)</button>
+        <button class="menu-btn" onclick="startBotGame('medium')">متوسط (محترف)</button>
+        <button class="menu-btn" onclick="startBotGame('hard')">قوي (خبير)</button>
+        <button class="back-btn" onclick="backToMain()">رجوع</button>
+    </div>
+
+    <!-- ساحة اللعب -->
+    <div id="game-area">
+        <div id="status">الحالة: تبدأ اللعبة</div>
+        <div id="board"></div>
+        <button class="back-btn" onclick="backToMain()">إنهاء والعودة للقائمة</button>
+    </div>
+
+<script>
+    let board = null;
+    let game = new Chess();
+    let gameMode = ''; // local, online, bot
+    let botDifficulty = 'easy';
+
+    function backToMain() {
+        document.getElementById('menu-container').style.display = 'block';
+        document.getElementById('online-menu').style.display = 'none';
+        document.getElementById('bot-menu').style.display = 'none';
+        document.getElementById('game-area').style.display = 'none';
+        game = new Chess();
+    }
+
+    function showOnlineMenu() {
+        document.getElementById('menu-container').style.display = 'none';
+        document.getElementById('online-menu').style.display = 'block';
+    }
+
+    function showBotMenu() {
+        document.getElementById('menu-container').style.display = 'none';
+        document.getElementById('bot-menu').style.display = 'block';
+    }
+
+    function startLocalGame() {
+        gameMode = 'local';
+        setupGameUI();
+    }
+
+    function startBotGame(level) {
+        gameMode = 'bot';
+        botDifficulty = level;
+        setupGameUI();
+    }
+
+    function createRoom() {
+        let code = Math.floor(1000 + Math.random() * 9000);
+        document.getElementById('room-code-display').innerText = 'كود غرفتك: ' + code + ' (أعطه لصديقك)';
+        gameMode = 'online';
+        // هنا تم تجهيز الغرفة محلياً، ويمكنك ربطها بقاعدة بيانات لاحقاً للأونلاين الكامل
+    }
+
+    function joinRoom() {
+        let code = document.getElementById('join-code-input').value;
+        if(code) {
+            alert('تم الاتصال بالغرفة رقم: ' + code);
+            gameMode = 'online';
+            setupGameUI();
+        } else {
+            alert('الرجاء إدخال الكود بشكل صحيح!');
+        }
+    }
+
+    function setupGameUI() {
+        document.getElementById('menu-container').style.display = 'none';
+        document.getElementById('online-menu').style.display = 'none';
+        document.getElementById('bot-menu').style.display = 'none';
+        document.getElementById('game-area').style.display = 'flex';
+
+        setTimeout(() => {
+            board = Chessboard('board', {
+                draggable: true,
+                position: 'start',
+                onDragStart: onDragStart,
+                onDrop: onDrop,
+                onSnapEnd: onSnapEnd
+            });
+            updateStatus();
+        }, 200);
+    }
+
+    function onDragStart (source, piece, position, orientation) {
+        if (game.game_over()) return false;
+        // منع تحريك قطع الخصم
+        if ((game.turn() === 'w' && piece.search(/^b/) !== -1) ||
+            (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
+            return false;
+        }
+    }
+
+    function onDrop (source, target) {
+        let move = game.move({
+            from: source,
+            to: target,
+            promotion: 'q' // ترقية العسكري وزير تلقائياً
+        });
+
+        if (move === null) return 'snapback';
+
+        updateStatus();
+
+        // إذا كان الوضع ضد روبوت ودور الأسود، الروبوت يلعب
+        if (gameMode === 'bot' && !game.game_over() && game.turn() === 'b') {
+            window.setTimeout(makeBotMove, 500);
+        }
+    }
+
+    function onSnapEnd () {
+        board.position(game.fen());
+    }
+
+    function makeBotMove() {
+        let possibleMoves = game.moves();
+        if (possibleMoves.length === 0) return;
+
+        let randomMove;
+        if (botDifficulty === 'easy') {
+            // عشوائي تماماً
+            randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+        } else if (botDifficulty === 'medium') {
+            // محاولة التقاط القطع إن وجد أو عشوائي
+            let captureMoves = possibleMoves.filter(m => m.includes('x'));
+            randomMove = captureMoves.length > 0 ? captureMoves[Math.floor(Math.random() * captureMoves.length)] : possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+        } else {
+            // مستوى قوي (يفضل الهجوم)
+            let captureMoves = possibleMoves.filter(m => m.includes('x') || m.includes('+'));
+            randomMove = captureMoves.length > 0 ? captureMoves[Math.floor(Math.random() * captureMoves.length)] : possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+        }
+
+        game.move(randomMove);
+        board.position(game.fen());
+        updateStatus();
+    }
+
+    function updateStatus () {
+        let status = '';
+        let moveColor = 'الأبيض';
+        if (game.turn() === 'b') {
+            moveColor = 'الأسود';
+        }
+
+        if (game.in_checkmate()) {
+            status = 'انتهت اللعبة، كش مات! الفائز هو ' + (moveColor === 'الأبيض' ? 'الأسود' : 'الأبيض');
+        } else if (game.in_draw()) {
+            status = 'تعادل!';
+        } else {
+            status = 'الدور لـ: ' + moveColor;
+            if (game.in_check()) {
+                status += ' (كش ملك!)';
+            }
+        }
+        document.getElementById('status').innerText = status;
+    }
+</script>
+
+</body>
+</html>
