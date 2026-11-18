@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لعبة الشطرنج - بوسعود</title>
+    <title>شطرنج بوسعود الفاخر</title>
     <style>
         body {
             margin: 0;
@@ -84,23 +84,22 @@
             font-weight: bold;
         }
 
-        /* لوحة الشطرنج المصممة بالبرمجة الصافية */
         #chessboard {
             display: grid;
-            grid-template-columns: repeat(8, 50px);
-            grid-template-rows: repeat(8, 50px);
+            grid-template-columns: repeat(8, 45px);
+            grid-template-rows: repeat(8, 45px);
             border: 4px solid #00ffcc;
             border-radius: 6px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
 
         .square {
-            width: 50px;
-            height: 50px;
+            width: 45px;
+            height: 45px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 30px;
+            font-size: 26px;
             font-weight: bold;
             cursor: pointer;
             position: relative;
@@ -113,14 +112,14 @@
         .highlight::after {
             content: '';
             position: absolute;
-            width: 18px;
-            height: 18px;
-            background-color: rgba(0, 255, 204, 0.7);
+            width: 14px;
+            height: 14px;
+            background-color: rgba(0, 255, 204, 0.9);
             border-radius: 50%;
         }
 
-        .white-piece { color: #ffffff; text-shadow: 0 0 3px #000, 0 0 3px #000; }
-        .black-piece { color: #222222; text-shadow: 0 0 2px #fff; }
+        .white-piece { color: #ffffff; text-shadow: 0 0 2px #000, 0 0 2px #000; }
+        .black-piece { color: #111111; }
 
         .back-btn {
             background: #ff4444;
@@ -137,7 +136,6 @@
 </head>
 <body>
 
-    <!-- القائمة الرئيسية -->
     <div id="menu-container">
         <h1>شطرنج الأساطير</h1>
         <button class="menu-btn" onclick="startLocalGame()">اللعب ضد صديق (محلي)</button>
@@ -145,7 +143,6 @@
         <button class="menu-btn" onclick="showBotMenu()">اللعب ضد روبوت</button>
     </div>
 
-    <!-- قائمة الأونلاين -->
     <div id="online-menu" class="sub-menu">
         <h2>تحدي أونلاين</h2>
         <button class="menu-btn" onclick="createRoom()">إنشاء غرفة وتوليد كود</button>
@@ -156,7 +153,6 @@
         <button class="back-btn" onclick="backToMain()">رجوع</button>
     </div>
 
-    <!-- قائمة مستويات الروبوت -->
     <div id="bot-menu" class="sub-menu">
         <h2>اختر مستوى الروبوت</h2>
         <button class="menu-btn" onclick="startBotGame('easy')">ضعيف (مبتدئ)</button>
@@ -165,7 +161,6 @@
         <button class="back-btn" onclick="backToMain()">رجوع</button>
     </div>
 
-    <!-- ساحة اللعب -->
     <div id="game-area">
         <div id="status">الدور لـ: الأبيض</div>
         <div id="chessboard"></div>
@@ -189,7 +184,7 @@
         ['R','N','B','Q','K','B','N','R']
     ];
 
-    let turn = 'white'; // white or black
+    let turn = 'white';
     let selectedPiece = null;
     let validMoves = [];
     let gameMode = 'local';
@@ -300,7 +295,6 @@
         let isWhitePiece = p && p === p.toUpperCase();
         let isBlackPiece = p && p === p.toLowerCase();
 
-        // اختيار القطعة بالضغط عليها
         if((turn === 'white' && isWhitePiece) || (turn === 'black' && isBlackPiece)) {
             selectedPiece = {r, c};
             validMoves = getValidMoves(r, c, p);
@@ -308,7 +302,6 @@
             return;
         }
 
-        // تحريك القطعة للمكان المختار بالضغط
         if(selectedPiece) {
             let moveFound = validMoves.find(m => m.r === r && m.c === c);
             if(moveFound) {
@@ -333,17 +326,19 @@
     function getValidMoves(r, c, piece) {
         let moves = [];
         let isWhite = piece === piece.toUpperCase();
-        
-        // حركة استعراضية مبسطة ودقيقة للجصئيات والجنود والقطع
+        let pLower = piece.toLowerCase();
         let dir = isWhite ? -1 : 1;
-        
-        // حركة الجندي
-        if(piece.toLowerCase() === 'p') {
+
+        if(pLower === 'p') {
             let nextR = r + dir;
             if(nextR >= 0 && nextR < 8 && !board[nextR][c]) {
                 moves.push({r: nextR, c: c});
+                // خطوتين للأول مرة
+                if((isWhite && r === 6) || (!isWhite && r === 1)) {
+                    let doubleR = r + (dir * 2);
+                    if(!board[doubleR][c]) moves.push({r: doubleR, c: c});
+                }
             }
-            // الأكل القطري البسيط
             if(nextR >= 0 && nextR < 8) {
                 if(c > 0 && board[nextR][c-1] && (board[nextR][c-1] === board[nextR][c-1].toUpperCase()) !== isWhite) {
                     moves.push({r: nextR, c: c-1});
@@ -353,19 +348,34 @@
                 }
             }
         } else {
-            // حركة عامة لبقية القطع (حركة استكشافية حرة بالمربعات المجاورة والبعيدة)
-            for(let dr = -2; dr <= 2; dr++) {
-                for(let dc = -2; dc <= 2; dc++) {
-                    if(dr === 0 && dc === 0) continue;
-                    let nr = r + dr, nc = c + dc;
-                    if(nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
-                        let target = board[nr][nc];
-                        if(!target || (target === target.toUpperCase()) !== isWhite) {
+            // حركة مرنة وشاملة للقطع الأخرى
+            let steps = (pLower === 'q' || pLower === 'r' || pLower === 'b') ? 7 : 2;
+            let dirs = [];
+            if(pLower === 'r' || pLower === 'q' || pLower === 'k') dirs.push([1,0], [-1,0], [0,1], [0,-1]);
+            if(pLower === 'b' || pLower === 'q' || pLower === 'k') dirs.push([1,1], [1,-1], [-1,1], [-1,-1]);
+            if(pLower === 'n') {
+                dirs = [[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]];
+                steps = 1;
+            }
+
+            dirs.forEach(([dr, dc]) => {
+                let stepCount = 1;
+                let nr = r + dr, nc = c + dc;
+                while(nr >= 0 && nr < 8 && nc >= 0 && nc < 8 && stepCount <= steps) {
+                    let target = board[nr][nc];
+                    if(!target) {
+                        moves.push({r: nr, c: nc});
+                    } else {
+                        if((target === target.toUpperCase()) !== isWhite) {
                             moves.push({r: nr, c: nc});
                         }
+                        break;
                     }
+                    nr += dr;
+                    nc += dc;
+                    stepCount++;
                 }
-            }
+            });
         }
         return moves;
     }
